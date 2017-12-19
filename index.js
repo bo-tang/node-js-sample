@@ -1,23 +1,39 @@
-const express = require('express')
-const bodyParser = require('body-parser');
-const app = express()
+// BASE SETUP
+// ==============================================
+const express = require('express');
+const router  = express.Router();
+const app     = express()
+const port    = process.env.PORT || 5000;
+router.use(express.static(__dirname + '/public'));
+app.set('view engine', 'ejs');
 
-app.use(express.static(__dirname + '/public'))
-app.use(bodyParser.urlencoded({ extended: true }));
+// REQUIRED MODULE ROUTES
+// ==============================================
+var status = require('./routes/status');
 
-app.set('port', (process.env.PORT || 5000))
-app.set('view engine', 'ejs')
+// ROUTES
+// ==============================================
+// route middleware that will happen on every request
+router.use(function(req, res, next) {
+    // log each request to the console
+    console.log(req.method, req.url);
+    // continue doing what we were doing and go to the route
+    next();
+});
 
-app.get('/', function(req, res) {
-  // ejs engine picks ./views/index.ejs
-  res.render('index');
-})
+app.use(function (err, req, res, next) {
+ console.error(err.stack);
+ response.status(500).send(err.message);
+});
 
-app.post('/', function (req, res) {
-  console.log(req.body.city);
-  res.render('index', {city:req.body.city});  
-})
+// route to specific modules
+router.use('/', status);   // will be changed in the future if more pages built
+router.use('/status', status);
 
-app.listen(app.get('port'), function() {
-  console.log("Node app is running at localhost:" + app.get('port'))
-})
+// IMPORTANT: apply the routes to our application
+app.use('/', router);
+
+// START THE SERVER
+// ==============================================
+app.listen(port);
+console.log('Magic happens on port ' + port);
