@@ -4,7 +4,11 @@ const express = require('express');
 const router  = express.Router();
 const app     = express()
 const port    = process.env.PORT || 5000;
-router.use(express.static(__dirname + '/public'));
+// Set static files
+app.use(express.static(__dirname + '/public'));
+// Set directory to contain the templates ('views')
+app.set('views', __dirname + '/views');
+// Set view engine
 app.set('view engine', 'ejs');
 
 // REQUIRED MODULE ROUTES
