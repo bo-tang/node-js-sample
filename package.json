@@ -15,10 +15,12 @@
     "body-parser": "^1.18.2",
     "ejs": "^2.5.7",
     "express": "^4.16.2",
+    "node-ssh": "^5.0.0",
     "react": "^15.3.2",
     "react-dom": "^15.3.2",
     "react-router": "^2.6.1",
-    "request": "^2.83.0"
+    "request": "^2.83.0",
+    "shell-escape": "^0.2.0"
   },
   "engines": {
     "node": "4.0.0"

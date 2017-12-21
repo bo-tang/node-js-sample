@@ -1,4 +1,4 @@
 [
-  {"id":1, "name":"Hiretual Portal", "url":"http://localhost", "ip":"localhost", "ssh_username":"hiretual", "ssh_cred":"/home/hiretual/.ssh/id_rsa", "metrics":["cpu", "memory", "disk", "responseDelay", "httpCode", "connections"]},
-  {"id":2, "name":"Talent Engine", "url":"http://localhost:8080", "ip":"localhost", "ssh_username":"hiretual", "ssh_cred":"/home/hiretual/.ssh/id_rsa", "metrics":["cpu", "memory", "disk", "responseDelay", "httpCode", "connections"]}
+  {"id":1, "name":"Hiretual Portal", "url":"http://localhost", "host":"localhost", "ssh_username":"hiretual", "ssh_cred":"/home/hiretual/.ssh/id_rsa", "metrics":["cpu", "memory", "disk", "responseDelay", "httpCode", "connections"]},
+  {"id":2, "name":"Talent Engine", "url":"http://localhost:8080", "host":"localhost", "ssh_username":"hiretual", "ssh_cred":"/home/hiretual/.ssh/id_rsa", "metrics":["cpu", "memory", "disk", "responseDelay", "httpCode", "connections"]}
 ]

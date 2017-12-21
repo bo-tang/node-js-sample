@@ -19,19 +19,13 @@ exports.dashboard = function (req, res){
   // compose rows array
   var rowsArray = [];
   for(var i = 0; i < targets.length; i++){
-    var targetStatus = statusModel.getTargetStatus(targets[i].id, function(err, status){
+    var row = statusModel.getTargetStatus(targets[i].id, function(err, status){
         if (err) return handleError(err);
       });
-    var row = {
-      "id": targets[i].id,
-      "name": targets[i].name
-    };
-    // TBD: also include the initial target status in each row
-    Object.assign(row, targetStatus.status);
     rowsArray.push(row);
   }
   data.rows = rowsArray;
-  console.log(data);
+  // console.log(data);
   // ejs engine picks pages in /views folder by default
   res.render('dashboard', data);
 };
