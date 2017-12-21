@@ -4,18 +4,18 @@ const statusModel = require('../models/status');
 // Render the dashboard page
 exports.dashboard = function (req, res){
   var data = {};
-  var metrics = statusModel.getAllMetrics(function(err, status){
-        if (err) return handleError(err);
-      });
+  // var metrics = statusModel.getAllMetrics(function(err, status){
+  //       if (err) return handleError(err);
+  //     });
   var targets = statusModel.getTargetList(function(err, status){
         if (err) return handleError(err);
       });
   // compose colums array
-  var columnsArray = ["id", "name"];
-  for(var i = 0; i < metrics.length; i++){
-    columnsArray.push(metrics[i]);
-  }
-  data.columns = columnsArray;
+  // var columnsArray = ["id", "name"];
+  // for(var i = 0; i < metrics.length; i++){
+  //   columnsArray.push(metrics[i]);
+  // }
+  // data.columns = columnsArray;
   // compose rows array
   var rowsArray = [];
   for(var i = 0; i < targets.length; i++){

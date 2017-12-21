@@ -3,6 +3,7 @@
 const fs = require('fs');
 const sshClient = require('ssh2').Client;
 const request = require('request');
+const os = require('os');
 
 // GLOBAL VARIABLES
 // ================================================
@@ -21,7 +22,11 @@ for(var i = 0; i < rawTargets.length; i++){
   allStatus.push(target);
 }
 // cache last record of rps data
-var lastRPSData = "";
+var lastRPSData = {};
+// initialize lastRPSData
+for(var i = 0; i < rawTargets.length; i++){
+  lastRPSData[rawTargets[i].id] = "";
+}
 
 // MODEL IMPLEMENTATION
 // ================================================
@@ -83,13 +88,6 @@ exports.getTargetMetrics = function(targetId){
 
 exports.getTargetMetricValue = function(targetId, metric){
   var res = "";
-  // // find the status with the targetId for the 1st appearance
-  // var status = allStatus.find(function(s){
-  //   return s.id == targetId;
-  // });
-  // if(!status){
-  //   return res;
-  // }
   // find the target object with the targetId for the 1st appearance
   var target = rawTargets.find(function(t){
     return t.id == targetId;
@@ -108,14 +106,14 @@ exports.getTargetMetricValue = function(targetId, metric){
     case "disk":
       res = exports.getDisk(target);
       break;
-    case "responseDelay":
-      res = exports.getHttpResponse(target).responseDelay;
+    case "response_delay":
+      res = exports.getHttpResponse(target).response_delay;
       break;
-    case "httpCode":
-      res = exports.getHttpResponse(target).httpCode;
+    case "http_statuscode":
+      res = exports.getHttpResponse(target).http_statuscode;
       break;
-    case "connections":
-      res = exports.getConnections(target);
+    case "apache_traffic":
+      res = exports.getApacheTraffic(target);
       break;
     default:
   }
@@ -142,7 +140,7 @@ exports.getCPU = function(target){
         // console.log('STDOUT: ' + data);
         for(var i = 0; i < allStatus.length; i++){
           if(allStatus[i].id == target.id){
-            allStatus[i].cpu = data;
+            allStatus[i].cpu = data.toString();
             break;
           }
         }
@@ -170,7 +168,7 @@ exports.getMemory = function(target){
   var conn = new sshClient();
   conn.on('ready', function() {
     // console.log('Client :: ready');
-    conn.exec('free -m | awk \'NR==2{printf "%s/%sMB (%.2f%%)", $3,$2,$3*100/$2 }\'', function(err, stream) {
+    conn.exec('free -h | awk \'NR==2{printf "%s/%s (%.2f%%)", $3,$2,$3*100/$2 }\'', function(err, stream) {
       if (err) throw err;
       stream.on('close', function(code, signal) {
         // console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
@@ -179,12 +177,12 @@ exports.getMemory = function(target){
         // console.log('STDOUT: ' + data);
         for(var i = 0; i < allStatus.length; i++){
           if(allStatus[i].id == target.id){
-            allStatus[i].memory = data;
+            allStatus[i].memory = data.toString();
             break;
           }
         }
       }).stderr.on('data', function(data) {
-        // console.log('STDERR: ' + data);
+        console.log('STDERR: ' + data);
       });
     });
   }).connect({
@@ -207,7 +205,7 @@ exports.getDisk = function(target){
   var conn = new sshClient();
   conn.on('ready', function() {
     // console.log('Client :: ready');
-    conn.exec('df -h | awk \'$NF=="/"{printf "%d/%dGB (%s)", $3,$2,$5}\'', function(err, stream) {
+    conn.exec('df -h | awk \'$NF=="/"{printf "%s/%s (%s)", $3,$2,$5}\'', function(err, stream) {
       if (err) throw err;
       stream.on('close', function(code, signal) {
         // console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
@@ -216,12 +214,12 @@ exports.getDisk = function(target){
         // console.log('STDOUT: ' + data);
         for(var i = 0; i < allStatus.length; i++){
           if(allStatus[i].id == target.id){
-            allStatus[i].disk = data;
+            allStatus[i].disk = data.toString();
             break;
           }
         }
       }).stderr.on('data', function(data) {
-        // console.log('STDERR: ' + data);
+        console.log('STDERR: ' + data);
       });
     });
   }).connect({
@@ -237,8 +235,8 @@ exports.getHttpResponse = function(target){
   var res = {};
   for(var i = 0; i < allStatus.length; i++){
     if(allStatus[i].id == target.id){
-      res.httpCode = allStatus[i].httpCode;
-      res.responseDelay = allStatus[i].responseDelay;
+      res.http_statuscode = allStatus[i].http_statuscode;
+      res.response_delay = allStatus[i].response_delay;
       break;
     }
   }
@@ -246,8 +244,8 @@ exports.getHttpResponse = function(target){
   request({url: target.url, time : true}, function(error, response, body) {
     for(var i = 0; i < allStatus.length; i++){
       if(allStatus[i].id == target.id){
-        allStatus[i].httpCode = response.statusCode;
-        allStatus[i].responseDelay = response.elapsedTime.toString() + ' ms';
+        allStatus[i].http_statuscode = response.statusCode.toString();
+        allStatus[i].response_delay = response.elapsedTime.toString() + ' ms';
         break;
       }
     }
@@ -255,18 +253,18 @@ exports.getHttpResponse = function(target){
   return res;
 }
 
-exports.getConnections = function(target){
+exports.getApacheTraffic = function(target){
   var res = "";
   for(var i = 0; i < allStatus.length; i++){
     if(allStatus[i].id == target.id){
-      res = allStatus[i].connections;
+      res = allStatus[i].apache_traffic;
       break;
     }
   }
   var conn = new sshClient();
   conn.on('ready', function() {
     // console.log('Client :: ready');
-    conn.exec('sed -n \'$=\' /var/log/apache2/access.log; date +%s', function(err, stream) {
+    conn.exec('echo | awk -v d1=$(sed -n \'$=\' ' + target.logPath + ') -v d2=$(date +%s) \'{print d1 " " d2}\'', function(err, stream) {
       if (err) throw err;
       stream.on('close', function(code, signal) {
         // console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
@@ -275,21 +273,24 @@ exports.getConnections = function(target){
         // console.log('STDOUT: ' + data);
         var rps = 0;
         // calculate request per second
-        if(lastRPSData !== ""){
-          var last = lastRPSData.split(/\r?\n/);
-          var curr = data.split(/\r?\n/);
-          rps = (Number(curr[0]) - Number(last[0])) / (Number(curr[1]) - Number(last[1]));
-          lastRPSData = data;
+        if(lastRPSData[target.id] === ""){
+          lastRPSData[target.id] = data.toString().replace(os.EOL, '');
+        } else {
+          var last = lastRPSData[target.id].split(" ");
+          var curr = data.toString().split(" ");
+          if(Number(curr[0]) >= Number(last[0])){
+            rps = (Number(curr[0]) - Number(last[0])) / (Number(curr[1]) - Number(last[1]));
+            lastRPSData[target.id] = data.toString().replace(os.EOL, '');;
+          }
         }
-
         for(var i = 0; i < allStatus.length; i++){
           if(allStatus[i].id == target.id){
-            allStatus[i].connections = rps.toFixed(2) + ' req/s';
+            allStatus[i].apache_traffic = rps.toFixed(2) + ' req/s';
             break;
           }
         }
       }).stderr.on('data', function(data) {
-        // console.log('STDERR: ' + data);
+        console.log('STDERR: ' + data);
       });
     });
   }).connect({

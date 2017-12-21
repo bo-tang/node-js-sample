@@ -11,30 +11,52 @@
   </head>
   <body>
     <div class="container">
-      <table id="grid-basic" class="table table-condensed table-hover table-striped">
+      <table id="grid-basic" class="table table-condensed table-hover">
         <thead>
-          <% const columnMap = {
+          <% const attrNameMap = {
                 "id": "ID",
                 "name": "Name",
                 "cpu": "CPU",
                 "memory": "Memory",
                 "disk": "Disk",
-                "responseDelay": "Response Time",
-                "httpCode": "Service Status",
-                "connections": "Connections"
+                "response_delay": "Response Time",
+                "http_statuscode": "Service Status",
+                "apache_traffic": "Apache Traffic",
+                "mysql_traffic": "MySQL Traffic"
+              } %>
+          <% const columnAttrMap = {
+                "ID": "id",
+                "Name": "name",
+                "Service Status": ["response_delay", "http_statuscode"],
+                "Usage": ["cpu", "memory", "disk"],
+                "Statistics": ["apache_traffic", "mysql_traffic"]
               } %>
           <tr>
-            <% for (var i = 0; i < columns.length; i++){ %>
-              <th data-column-id="<%= columns[i] %>"><%= columnMap[columns[i]] %></th>
+            <% for (var i = 0; i < Object.keys(columnAttrMap).length; i++){ %>
+              <th><%= Object.keys(columnAttrMap)[i] %></th>
             <% } %>
+            <th><button type="button" class="btn btn-primary">Add Target</button></th>
           </tr>
         </thead>
         <tbody>
           <% for (var i = 0; i < rows.length; i++){ %>
-            <tr>
-              <% for (var j = 0; j < columns.length; j++){ %>
-                <td><%= rows[i][columns[j]] %></td>
+            <tr id="<%=rows[i].id%>">
+              <% for (var j = 0; j < Object.keys(columnAttrMap).length; j++){
+                  var attrs = columnAttrMap[Object.keys(columnAttrMap)[j]];
+                  console.log(attrs)
+                  if(Array.isArray(attrs)){ %>
+                    <td>
+                    <% for(var k = 0; k < attrs.length; k++){ 
+                      if(attrs[k] in rows[i]){ %>
+                      <%=attrNameMap[attrs[k]]%>: <%= rows[i][attrs[k]] %><br />
+                    <% }
+                    } %>
+                    </td>
+                <% } else { %>
+                    <td><%= rows[i][attrs] %></td>
+                <% } %>
               <% } %>
+              <td></td>
             </tr>
           <% } %>
         </tbody>

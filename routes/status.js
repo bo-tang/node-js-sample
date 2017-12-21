@@ -14,6 +14,9 @@ var statusController = require('../controllers/status');
 // Home page route
 router.get('/', statusController.dashboard);
 
+// all status route
+router.get('/all', statusController.all_status);
+
 // target list route
 router.get('/targets', statusController.target_list);
 
