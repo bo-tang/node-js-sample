@@ -20,6 +20,8 @@ for(var i = 0; i < rawTargets.length; i++){
   }
   allStatus.push(target);
 }
+// cache last record of rps data
+var lastRPSData = "";
 
 // MODEL IMPLEMENTATION
 // ================================================
@@ -245,7 +247,7 @@ exports.getHttpResponse = function(target){
     for(var i = 0; i < allStatus.length; i++){
       if(allStatus[i].id == target.id){
         allStatus[i].httpCode = response.statusCode;
-        allStatus[i].responseDelay = response.elapsedTime.toString() + 'ms';
+        allStatus[i].responseDelay = response.elapsedTime.toString() + ' ms';
         break;
       }
     }
@@ -254,5 +256,47 @@ exports.getHttpResponse = function(target){
 }
 
 exports.getConnections = function(target){
-  return '122';
+  var res = "";
+  for(var i = 0; i < allStatus.length; i++){
+    if(allStatus[i].id == target.id){
+      res = allStatus[i].connections;
+      break;
+    }
+  }
+  var conn = new sshClient();
+  conn.on('ready', function() {
+    // console.log('Client :: ready');
+    conn.exec('sed -n \'$=\' /var/log/apache2/access.log; date +%s', function(err, stream) {
+      if (err) throw err;
+      stream.on('close', function(code, signal) {
+        // console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
+        conn.end();
+      }).on('data', function(data) {
+        // console.log('STDOUT: ' + data);
+        var rps = 0;
+        // calculate request per second
+        if(lastRPSData !== ""){
+          var last = lastRPSData.split(/\r?\n/);
+          var curr = data.split(/\r?\n/);
+          rps = (Number(curr[0]) - Number(last[0])) / (Number(curr[1]) - Number(last[1]));
+          lastRPSData = data;
+        }
+
+        for(var i = 0; i < allStatus.length; i++){
+          if(allStatus[i].id == target.id){
+            allStatus[i].connections = rps.toFixed(2) + ' req/s';
+            break;
+          }
+        }
+      }).stderr.on('data', function(data) {
+        // console.log('STDERR: ' + data);
+      });
+    });
+  }).connect({
+    host: target.host,
+    port: 22,
+    username: target.ssh_username,
+    privateKey: fs.readFileSync(target.ssh_cred)
+  });
+  return res;
 }
