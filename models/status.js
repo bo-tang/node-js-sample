@@ -406,7 +406,7 @@ exports.getMysqlLoad = function(target){
           }
         }
       }).stderr.on('data', function(data) {
-        // console.log('STDERR: ' + data);
+        console.log('STDERR: ' + data);
         for(var i = 0; i < allStatus.length; i++){
           if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
             allStatus[i].mysql_load = "Internal Error";

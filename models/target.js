@@ -16,7 +16,7 @@ exports.getAllTargets = function(){
 
 exports.updateAllTargets = function(targets){
   var res = "";
-  console.log(targets)
+  // console.log(targets)
   fs.writeFile("assets/targets.json", JSON.stringify(targets), 'utf8', function(err){
     if (err){
       console.log('Error writing file: ' + targetsFilePath + '\n' + err);

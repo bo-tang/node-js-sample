@@ -17,6 +17,7 @@ $(document).ready(function() {
       }
     })
   })
+
   $("#button-save_targets").on("click", function(){
     $.ajax({
       type: "POST",
@@ -59,6 +60,10 @@ function reloadData(){
 
 /**
 * return color style of the given metric name and value
+* @param Object status stores the entire status object including the warning and error threshold map
+* @param String attrName
+* @param String attrVal
+* @return Object style to be changed on text elements
 */
 function colorMetricValue(status, attrName, attrVal){
   var style = {"color":"green","font-size":"16px","font-weight":"normal"};

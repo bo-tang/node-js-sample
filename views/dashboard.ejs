@@ -64,21 +64,7 @@
                     <td id="td-<%=rows[i].id%>-<%= Object.keys(columnAttrMap)[j].toLowerCase().split(' ').join('_') %>">
                     <% for(var k = 0; k < attrs.length; k++){ 
                       if(attrs[k] in rows[i]){ %>
-                      <%=attrNameMap[attrs[k]]%>: 
-                      <% if(attrs[k] == "http_statuscode"){ %>
-                        <% var code = parseInt(rows[i][attrs[k]], 10);
-                          if(code < 300){ %>
-                            <text id="text-<%=rows[i].id%>-<%=attrs[k]%>" class="metric_value" style="color:green;font-size: 22px;font-weight: bold">
-                          <% } else { %>
-                            <text id="text-<%=rows[i].id%>-<%=attrs[k]%>" class="metric_value" style="color:red;font-size: 22px;font-weight: bold">
-                          <% } %>
-                      <% }
-                        if(rows[i][attrs[k]] == "Internal Error"){ %>
-                          <text id="text-<%=rows[i].id%>-<%=attrs[k]%>" class="metric_value" style="color:red;font-weight: bold">
-                        <% } else { %>
-                          <text id="text-<%=rows[i].id%>-<%=attrs[k]%>" class="metric_value">
-                        <% } %>
-                        <%= rows[i][attrs[k]] %></text><br />
+                      <%=attrNameMap[attrs[k]]%>: <text id="text-<%=rows[i].id%>-<%=attrs[k]%>" class="metric_value"><%= rows[i][attrs[k]] %></text><br />
                     <% }
                     } %>
                     </td>
@@ -88,7 +74,7 @@
               <% } %>
               <td>
                 <!-- <button type="button" id="button-edit_target" class="btn btn-outline-primary">Edit</button> -->
-                <button type="button" id="button-more_cmd" class="btn btn-link" data-toggle="collapse" data-target="#tabs_board">Manual Tests ></button>
+                <button type="button" id="button-more_cmd" class="btn btn-outline-primary" data-toggle="collapse" data-target="#tabs_board">Manual Tests ></button>
               </td>
             </tr>
           <% } %>
