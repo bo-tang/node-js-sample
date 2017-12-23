@@ -1,5 +1,6 @@
 // Require model
 const statusModel = require('../models/status');
+const targetModel = require('../models/target');
 
 // Render the dashboard page
 exports.dashboard = function (req, res){
@@ -7,9 +8,9 @@ exports.dashboard = function (req, res){
   // var metrics = statusModel.getAllMetrics(function(err, status){
   //       if (err) return handleError(err);
   //     });
-  var targets = statusModel.getTargetList(function(err, status){
-        if (err) return handleError(err);
-      });
+  var targets = targetModel.getAllTargets(function(err, status){
+      if (err) return handleError(err);
+    });
   // compose colums array
   // var columnsArray = ["id", "name"];
   // for(var i = 0; i < metrics.length; i++){
@@ -25,6 +26,7 @@ exports.dashboard = function (req, res){
     rowsArray.push(row);
   }
   data.rows = rowsArray;
+  data.targets = targets;
   // console.log(data);
   // ejs engine picks pages in /views folder by default
   res.render('dashboard', data);
@@ -37,14 +39,6 @@ exports.all_status = function(req, res) {
     if (err) return handleError(err);
   });
   res.send(allStatus);
-};
-
-// Display list of all targets
-exports.target_list = function(req, res) {
-  var targetList = statusModel.getTargetList(function(err, status){
-    if (err) return handleError(err);
-  });
-  res.send(targetList);
 };
 
 // Display status of a specific target

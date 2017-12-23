@@ -15,10 +15,12 @@ for(var i = 0; i < rawTargets.length; i++){
   var target = {
     "id": rawTargets[i].id,
     "name": rawTargets[i].name,
+    "metricWarningThresMap": rawTargets[i].metricWarningThresMap,
+    "metricErrorThresMap": rawTargets[i].metricErrorThresMap,
   };
-  for(var j = 0; j < rawTargets[i].metrics.length; j++){
-    target[rawTargets[i].metrics[j]] = "";
-  }
+  // for(var j = 0; j < rawTargets[i].metrics.length; j++){
+  //   target[rawTargets[i].metrics[j]] = "";
+  // }
   allStatus.push(target);
 }
 // cache last record of rps data
@@ -41,7 +43,7 @@ exports.getAllStatus = function(){
 
 exports.getAllMetrics = function(){
   var res = [];
-  var tl = exports.getTargetList();
+  var tl = rawTargets;
   for(var i = 0; i < tl.length; i++){
     var metrics = tl[i].metrics;
     for(var j = 0; j < metrics.length; j++){
@@ -66,12 +68,6 @@ exports.getTargetStatus = function(targetId){
     targetStatus[metrics[i]] = exports.getTargetMetricValue(targetId, metrics[i]);
   }
   return targetStatus;
-}
-
-exports.getTargetList = function(){
-  return rawTargets;
-  // TODO: handle file io error
-  // TODO: handle not found error
 }
 
 exports.getTargetMetrics = function(targetId){
@@ -115,10 +111,18 @@ exports.getTargetMetricValue = function(targetId, metric){
     case "apache_traffic":
       res = exports.getApacheTraffic(target);
       break;
+    case "apache_load":
+      res = exports.getApacheLoad(target);
+      break;
+    case "mysql_load":
+      res = exports.getMysqlLoad(target);
+      break;
     default:
   }
   return res;
 }
+
+///////////////////////// IMPLEMENTATIONS OF METRICS RETRIEVAL /////////////////////////////////////
 
 exports.getCPU = function(target){
   var res = "";
@@ -131,7 +135,7 @@ exports.getCPU = function(target){
   var conn = new sshClient();
   conn.on('ready', function() {
     // console.log('Client :: ready');
-    conn.exec('top -bn1 | grep load | awk \'{printf "%.2f", $(NF-0)}\'', function(err, stream) {
+    conn.exec('top -bn1 | grep "Cpu(s)" | cut -d " " -f2 | awk \'{print $0 "%"}\'', function(err, stream) {
       if (err) throw err;
       stream.on('close', function(code, signal) {
         // console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
@@ -139,13 +143,19 @@ exports.getCPU = function(target){
       }).on('data', function(data) {
         // console.log('STDOUT: ' + data);
         for(var i = 0; i < allStatus.length; i++){
-          if(allStatus[i].id == target.id){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("cpu") !== -1){
             allStatus[i].cpu = data.toString();
             break;
           }
         }
       }).stderr.on('data', function(data) {
         // console.log('STDERR: ' + data);
+        for(var i = 0; i < allStatus.length; i++){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
+            allStatus[i].mysql_load = "Internal Error";
+            break;
+          }
+        }
       });
     });
   }).connect({
@@ -176,13 +186,19 @@ exports.getMemory = function(target){
       }).on('data', function(data) {
         // console.log('STDOUT: ' + data);
         for(var i = 0; i < allStatus.length; i++){
-          if(allStatus[i].id == target.id){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("memory") !== -1){
             allStatus[i].memory = data.toString();
             break;
           }
         }
       }).stderr.on('data', function(data) {
-        console.log('STDERR: ' + data);
+        // console.log('STDERR: ' + data);
+        for(var i = 0; i < allStatus.length; i++){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
+            allStatus[i].mysql_load = "Internal Error";
+            break;
+          }
+        }
       });
     });
   }).connect({
@@ -213,13 +229,19 @@ exports.getDisk = function(target){
       }).on('data', function(data) {
         // console.log('STDOUT: ' + data);
         for(var i = 0; i < allStatus.length; i++){
-          if(allStatus[i].id == target.id){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("disk") !== -1){
             allStatus[i].disk = data.toString();
             break;
           }
         }
       }).stderr.on('data', function(data) {
-        console.log('STDERR: ' + data);
+        // console.log('STDERR: ' + data);
+        for(var i = 0; i < allStatus.length; i++){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
+            allStatus[i].mysql_load = "Internal Error";
+            break;
+          }
+        }
       });
     });
   }).connect({
@@ -244,8 +266,12 @@ exports.getHttpResponse = function(target){
   request({url: target.url, time : true}, function(error, response, body) {
     for(var i = 0; i < allStatus.length; i++){
       if(allStatus[i].id == target.id){
-        allStatus[i].http_statuscode = response.statusCode.toString();
-        allStatus[i].response_delay = response.elapsedTime.toString() + ' ms';
+        if(target.metrics.indexOf("http_statuscode") !== -1 && typeof response.statusCode !== "undefined"){
+          allStatus[i].http_statuscode = response.statusCode.toString();
+        }
+        if(target.metrics.indexOf("response_delay") !== -1 && typeof response.elapsedTime !== "undefined"){
+          allStatus[i].response_delay = response.elapsedTime.toString() + ' ms';
+        }
         break;
       }
     }
@@ -264,7 +290,9 @@ exports.getApacheTraffic = function(target){
   var conn = new sshClient();
   conn.on('ready', function() {
     // console.log('Client :: ready');
-    conn.exec('echo | awk -v d1=$(sed -n \'$=\' ' + target.logPath + ') -v d2=$(date +%s) \'{print d1 " " d2}\'', function(err, stream) {
+    // get apache request per second by counting access.log line changes (d1, d2)
+    // get apache load by counting apache processes (d3)
+    conn.exec('echo | awk -v d1=$(sed -n \'$=\' ' + target.log_path + ') -v d2=$(date +%s) \'{print d1 " " d2}\'', function(err, stream) {
       if (err) throw err;
       stream.on('close', function(code, signal) {
         // console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
@@ -278,19 +306,113 @@ exports.getApacheTraffic = function(target){
         } else {
           var last = lastRPSData[target.id].split(" ");
           var curr = data.toString().split(" ");
-          if(Number(curr[0]) >= Number(last[0])){
+          if(Number(curr[0]) >= Number(last[0]) && (Number(curr[1]) > Number(last[1]))){
             rps = (Number(curr[0]) - Number(last[0])) / (Number(curr[1]) - Number(last[1]));
-            lastRPSData[target.id] = data.toString().replace(os.EOL, '');;
+            lastRPSData[target.id] = data.toString().replace(os.EOL, '');
           }
         }
         for(var i = 0; i < allStatus.length; i++){
-          if(allStatus[i].id == target.id){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("apache_traffic") !== -1){
             allStatus[i].apache_traffic = rps.toFixed(2) + ' req/s';
             break;
           }
         }
       }).stderr.on('data', function(data) {
-        console.log('STDERR: ' + data);
+        // console.log('STDERR: ' + data);
+        for(var i = 0; i < allStatus.length; i++){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
+            allStatus[i].mysql_load = "Internal Error";
+            break;
+          }
+        }
+      });
+    });
+  }).connect({
+    host: target.host,
+    port: 22,
+    username: target.ssh_username,
+    privateKey: fs.readFileSync(target.ssh_cred)
+  });
+  return res;
+}
+
+exports.getApacheLoad = function(target){
+  var res = "";
+  for(var i = 0; i < allStatus.length; i++){
+    if(allStatus[i].id == target.id){
+      res = allStatus[i].apache_load;
+      break;
+    }
+  }
+  var conn = new sshClient();
+  conn.on('ready', function() {
+    // console.log('Client :: ready');
+    // get apache request per second by counting access.log line changes (d1, d2)
+    // get apache load by counting apache processes (d3)
+    conn.exec('ps aux | grep apache2 | wc -l', function(err, stream) {
+      if (err) throw err;
+      stream.on('close', function(code, signal) {
+        // console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
+        conn.end();
+      }).on('data', function(data) {
+        // console.log('STDOUT: ' + data);
+        for(var i = 0; i < allStatus.length; i++){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("apache_load") !== -1){
+            allStatus[i].apache_load = data.toString().replace(os.EOL, '');
+            break;
+          }
+        }
+      }).stderr.on('data', function(data) {
+        // console.log('STDERR: ' + data);
+        for(var i = 0; i < allStatus.length; i++){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
+            allStatus[i].mysql_load = "Internal Error";
+            break;
+          }
+        }
+      });
+    });
+  }).connect({
+    host: target.host,
+    port: 22,
+    username: target.ssh_username,
+    privateKey: fs.readFileSync(target.ssh_cred)
+  });
+  return res;
+}
+
+exports.getMysqlLoad = function(target){
+  var res = "";
+  for(var i = 0; i < allStatus.length; i++){
+    if(allStatus[i].id == target.id){
+      res = allStatus[i].mysql_load;
+      break;
+    }
+  }
+  var conn = new sshClient();
+  conn.on('ready', function() {
+    // console.log('Client :: ready');
+    conn.exec('mysqladmin status ' + target.mysql_cred + '| cut -d " " -f5', function(err, stream) {
+      if (err) throw err;
+      stream.on('close', function(code, signal) {
+        // console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
+        conn.end();
+      }).on('data', function(data) {
+        // console.log('STDOUT: ' + data);
+        for(var i = 0; i < allStatus.length; i++){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
+            allStatus[i].mysql_load = data.toString();
+            break;
+          }
+        }
+      }).stderr.on('data', function(data) {
+        // console.log('STDERR: ' + data);
+        for(var i = 0; i < allStatus.length; i++){
+          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
+            allStatus[i].mysql_load = "Internal Error";
+            break;
+          }
+        }
       });
     });
   }).connect({

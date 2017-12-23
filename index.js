@@ -2,8 +2,11 @@
 // ==============================================
 const express = require('express');
 const router  = express.Router();
-const app     = express()
+const app     = express();
 const port    = process.env.PORT || 5000;
+const bodyParser = require('body-parser');
+app.use(bodyParser.json()); // support json encoded bodies
+app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 // Set static files
 app.use(express.static(__dirname + '/public'));
 // Set directory to contain the templates ('views')

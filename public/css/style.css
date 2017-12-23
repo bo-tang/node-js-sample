@@ -1,0 +1,26 @@
+.tab-pane {
+  padding: 15px;
+}
+
+.tab-pane textarea {
+  min-height: 400px;
+  width: 100%;
+  vertical-align: middle;
+}
+
+#tabs_board .nav-link.active{
+  border-bottom: 1px solid #f5f2f0;
+}
+
+#tabs_board .nav-link.active, #tabs_board .tab-pane.active {
+  background-color: #f5f2f0;
+}
+
+.tab-content .btn {
+  margin-top: 15px;
+}
+
+.metric_value {
+  font-weight: normal;
+  font-style: italic;
+}

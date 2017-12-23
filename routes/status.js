@@ -2,12 +2,12 @@
 // ==============================================
 const express = require('express');
 const router  = express.Router();
+const bodyParser = require('body-parser');
 
 // REQUIRED CONTROLLER MODULES
 // ==============================================
 var statusController = require('../controllers/status');
-// var instance_controller = require('../controllers/instance');
-// var metric_controller = require('../controllers/metric');
+var targetController = require('../controllers/target');
 
 // ROUTES
 // ==============================================
@@ -18,7 +18,10 @@ router.get('/', statusController.dashboard);
 router.get('/all', statusController.all_status);
 
 // target list route
-router.get('/targets', statusController.target_list);
+router.get('/targets', targetController.get_all_targets);
+
+// update target list route
+router.post('/targets', targetController.update_all_targets);
 
 // target status route
 router.get('/:targetId', statusController.target_status);
