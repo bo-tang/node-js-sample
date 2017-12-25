@@ -6,30 +6,82 @@
 
 /////////////////////////// Event Listners /////////////////////////
 $(document).ready(function() {
-  $("#button-reload_targets").on("click", function(){
+  // refresh the data every 5 seconds
+  setInterval(reloadData, 5000);
+
+  $("#btn-reload-targets").on("click", function(){
     $.ajax({
       type: "GET",
-      url: "/targets",
+      url: "/target/all",
       dataType: "json",
       success: function(targets){
         console.log(targets)
-        $("#textarea_targetsjson").val(JSON.stringify(targets, null, 4))
+        $("#ta-targetsjson").val(JSON.stringify(targets, null, 4))
       }
     })
   })
 
-  $("#button-save_targets").on("click", function(){
+  $("#btn-save-targets").on("click", function(){
     $.ajax({
       type: "POST",
-      url: "/targets",
-      data: {"targets":JSON.parse($("#textarea_targetsjson").val())},
+      url: "/target/all",
+      data: {"targets":JSON.parse($("#ta-targetsjson").val())},
       dataType: "json",
       success: function(targets){
         console.log(targets)
-        $("#textarea_targetsjson").val(JSON.stringify(targets, null, 4))
+        $("#ta-targetsjson").val(JSON.stringify(targets, null, 4))
       }
     })
   })
+
+  $(".btn_manual_cmd").on("click", function(){
+    var id = $(this).prop("id").split("-")[1];
+    $.ajax({
+      type: "GET",
+      url: "/target/" + id,
+      dataType: "json",
+      success: function(target){
+        // console.log(target)
+        // activate tab if exist, otherwise create a new one
+        if($('#tab-' + id).index() === -1){
+          // create a new tab and its pane at the end of the tab list
+          $('#tabs_hub').append('<li class="nav-item"><button type="button" class="close">&times;</button>'
+            + '<a class="nav-link" id="tab-' + id + '" data-toggle="tab" href="#tabpane-' + id + '" role="tab" '
+            + 'aria-controls="tabpane-' + id + '" aria-selected="false">' + target.name + '</a></li>');
+          $('#tabs_content').append(
+            '<div class="tab-pane" id="tabpane-' + id + '" role="tabpanel" aria-labelledby="tab-' + id + '">'
+            + '<textarea id="ta-targetsjson" class="form-control col-xs-12"></textarea>'
+            + '<button id="btn-execute-manualcmd" type="button" class="btn btn-primary">Save &amp; Execute</button>'
+            + '<button id="btn-reload-manualcmd" type="button" class="btn btn-outline-primary">Reload</button></div>');
+        }
+        $('#tab-' + id).tab('show');
+      }
+    })
+  })
+
+  $("#tabs_hub").on("click", ".close", function(){
+    // remove the tab and its associated tabpanel
+    var tabpane_id = $(this).parent("li").find("a").attr('href');
+    var tab_index = $(this).parent("li").index();
+    var tab_length = $('#tabs_hub li').length;
+    console.log(tabpane_id + " " + tab_index + " " + tab_length)
+    if(tab_index == (tab_length - 1)){
+      // show prev tab
+      var showtab = $(this).parent("li").prev().find("a");
+      console.log(showtab.attr("id"));
+      showtab.tab("show");
+      // $(showtab.attr('href')).addClass("active");
+    } else {
+      // show next tab
+      var showtab = $(this).parent("li").next().find("a");
+      console.log(showtab.text());
+      showtab.tab("show");
+      // $(showtab.attr('href')).addClass("active");
+    }
+    $(this).parent("li").remove();
+    $(tabpane_id).remove();
+  })
+
 });
 
 /////////////////////////// Useful Functions /////////////////////////
@@ -37,7 +89,7 @@ $(document).ready(function() {
 function reloadData(){
   $.ajax({
     type: "GET",
-    url: "/all",
+    url: "/status/all",
     dataType: "json",
     success: function(all_status){
       for(i = 0; i < all_status.length; i++){
@@ -47,11 +99,10 @@ function reloadData(){
           var attrName = Object.keys(all_status[i])[j];
           if(attrName == "id" || attrName == "name") continue;
           var attrVal = all_status[i][attrName];
-          var style = colorMetricValue(all_status[i], attrName, attrVal);
           // update the value and style of the metric
           $("#text-" + targetId + "-" + attrName)
-            .html(all_status[i][attrName])
-            .css(style);
+            .html(attrVal)
+            .css(colorMetricValue(all_status[i], attrName, attrVal));
         }
       }
     }

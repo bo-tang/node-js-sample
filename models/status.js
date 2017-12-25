@@ -38,22 +38,10 @@ exports.getAllStatus = function(){
   for(var i = 0; i < res.length; i++){
     res[i] = exports.getTargetStatus(res[i].id);
   }
+  // console.log(res)
   return res;
 }
 
-exports.getAllMetrics = function(){
-  var res = [];
-  var tl = rawTargets;
-  for(var i = 0; i < tl.length; i++){
-    var metrics = tl[i].metrics;
-    for(var j = 0; j < metrics.length; j++){
-      if(res.indexOf(metrics[j]) == -1){
-        res.push(metrics[j]);
-      }
-    }
-  }
-  return res;
-}
 
 exports.getTargetStatus = function(targetId){
   var targetStatus = allStatus.find(function(s){
@@ -63,14 +51,6 @@ exports.getTargetStatus = function(targetId){
     return {};
   }
   // trigger metrics update
-  var metrics = exports.getTargetMetrics(targetId);
-  for(var i = 0; i < metrics.length; i++){
-    targetStatus[metrics[i]] = exports.getTargetMetricValue(targetId, metrics[i]);
-  }
-  return targetStatus;
-}
-
-exports.getTargetMetrics = function(targetId){
   var metrics = [];
   var target = rawTargets.find(function(t){
     return t.id == targetId;
@@ -78,8 +58,10 @@ exports.getTargetMetrics = function(targetId){
   if(target){
     metrics = target.metrics;
   }
-  return metrics;
-  // TODO: handle not found and duplicate id cases
+  for(var i = 0; i < metrics.length; i++){
+    targetStatus[metrics[i]] = exports.getTargetMetricValue(targetId, metrics[i]);
+  }
+  return targetStatus;
 }
 
 exports.getTargetMetricValue = function(targetId, metric){
@@ -144,15 +126,15 @@ exports.getCPU = function(target){
         // console.log('STDOUT: ' + data);
         for(var i = 0; i < allStatus.length; i++){
           if(allStatus[i].id == target.id && target.metrics.indexOf("cpu") !== -1){
-            allStatus[i].cpu = data.toString();
+            allStatus[i].cpu = data.toString().replace(os.EOL, "");
             break;
           }
         }
       }).stderr.on('data', function(data) {
         // console.log('STDERR: ' + data);
         for(var i = 0; i < allStatus.length; i++){
-          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
-            allStatus[i].mysql_load = "Internal Error";
+          if(allStatus[i].id == target.id && target.metrics.indexOf("cpu") !== -1){
+            allStatus[i].cpu = "Internal Error";
             break;
           }
         }
@@ -194,8 +176,8 @@ exports.getMemory = function(target){
       }).stderr.on('data', function(data) {
         // console.log('STDERR: ' + data);
         for(var i = 0; i < allStatus.length; i++){
-          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
-            allStatus[i].mysql_load = "Internal Error";
+          if(allStatus[i].id == target.id && target.metrics.indexOf("memory") !== -1){
+            allStatus[i].memory = "Internal Error";
             break;
           }
         }
@@ -237,8 +219,8 @@ exports.getDisk = function(target){
       }).stderr.on('data', function(data) {
         // console.log('STDERR: ' + data);
         for(var i = 0; i < allStatus.length; i++){
-          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
-            allStatus[i].mysql_load = "Internal Error";
+          if(allStatus[i].id == target.id && target.metrics.indexOf("disk") !== -1){
+            allStatus[i].disk = "Internal Error";
             break;
           }
         }
@@ -263,7 +245,8 @@ exports.getHttpResponse = function(target){
     }
   }
   // update in allStatus
-  request({url: target.url, time : true}, function(error, response, body) {
+  request({url: target.url, time : true}, function(error, response) {
+    if(error) throw error;
     for(var i = 0; i < allStatus.length; i++){
       if(allStatus[i].id == target.id){
         if(target.metrics.indexOf("http_statuscode") !== -1 && typeof response.statusCode !== "undefined"){
@@ -320,8 +303,8 @@ exports.getApacheTraffic = function(target){
       }).stderr.on('data', function(data) {
         // console.log('STDERR: ' + data);
         for(var i = 0; i < allStatus.length; i++){
-          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
-            allStatus[i].mysql_load = "Internal Error";
+          if(allStatus[i].id == target.id && target.metrics.indexOf("apache_traffic") !== -1){
+            allStatus[i].apache_traffic = "Internal Error";
             break;
           }
         }
@@ -365,8 +348,8 @@ exports.getApacheLoad = function(target){
       }).stderr.on('data', function(data) {
         // console.log('STDERR: ' + data);
         for(var i = 0; i < allStatus.length; i++){
-          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
-            allStatus[i].mysql_load = "Internal Error";
+          if(allStatus[i].id == target.id && target.metrics.indexOf("apache_load") !== -1){
+            allStatus[i].apache_load = "Internal Error";
             break;
           }
         }
@@ -401,16 +384,19 @@ exports.getMysqlLoad = function(target){
         // console.log('STDOUT: ' + data);
         for(var i = 0; i < allStatus.length; i++){
           if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
-            allStatus[i].mysql_load = data.toString();
+            allStatus[i].mysql_load = data.toString().replace(os.EOL, "");
             break;
           }
         }
       }).stderr.on('data', function(data) {
-        console.log('STDERR: ' + data);
-        for(var i = 0; i < allStatus.length; i++){
-          if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
-            allStatus[i].mysql_load = "Internal Error";
-            break;
+        // console.log('STDERR: ' + data);
+        var errorMsgs = data.toString().split(os.EOL);
+        if(errorMsgs[0].indexOf("Warnings:") === 0){
+          for(var i = 0; i < allStatus.length; i++){
+            if(allStatus[i].id == target.id && target.metrics.indexOf("mysql_load") !== -1){
+              allStatus[i].mysql_load = "Internal Error";
+              break;
+            }
           }
         }
       });

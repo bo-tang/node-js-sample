@@ -3,7 +3,7 @@
 }
 
 .tab-pane textarea {
-  min-height: 400px;
+  min-height: 250px;
   width: 100%;
   vertical-align: middle;
 }
@@ -18,9 +18,37 @@
 
 .tab-content .btn {
   margin-top: 15px;
+  margin-right: 10px;
 }
 
 .metric_value {
   font-weight: normal;
   font-style: italic;
+}
+
+.close {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 18px;
+  color: #000000;
+  text-shadow: 0 1px 0 #ffffff;
+  opacity: 0.2;
+  filter: alpha(opacity=20);
+  text-decoration: none;
+  display: inline-block;
+  float: right;
+  position:relative;
+  z-index: 9999;
+}
+.close:hover {
+  display:inline;
+  color: #000000;
+  text-decoration: none;
+  opacity: 0.4;
+  filter: alpha(opacity=40);
+  cursor: pointer;
+}
+
+.nav-tabs > li .close {
+  margin: 2px;
 }

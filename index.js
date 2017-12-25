@@ -3,10 +3,15 @@
 const express = require('express');
 const router  = express.Router();
 const app     = express();
-const port    = process.env.PORT || 5000;
 const bodyParser = require('body-parser');
+const methodOverride = require('method-override')
+const port    = process.env.PORT || 5000;
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
+app.use(methodOverride());
+app.use(logErrors);
+app.use(clientErrorHandler);
+app.use(errorHandler);
 // Set static files
 app.use(express.static(__dirname + '/public'));
 // Set directory to contain the templates ('views')
@@ -16,6 +21,8 @@ app.set('view engine', 'ejs');
 
 // REQUIRED MODULE ROUTES
 // ==============================================
+var dashboard = require('./routes/dashboard');
+var target = require('./routes/target');
 var status = require('./routes/status');
 
 // ROUTES
@@ -34,7 +41,8 @@ app.use(function (err, req, res, next) {
 });
 
 // route to specific modules
-router.use('/', status);   // will be changed in the future if more pages built
+router.use('/', dashboard);   // will be changed in the future if more pages built
+router.use('/target', target);
 router.use('/status', status);
 
 // IMPORTANT: apply the routes to our application
@@ -44,3 +52,21 @@ app.use('/', router);
 // ==============================================
 app.listen(port);
 console.log('Magic happens on port ' + port);
+
+function logErrors (err, req, res, next) {
+  console.error(err.stack)
+  next(err)
+}
+
+function clientErrorHandler (err, req, res, next) {
+  if (req.xhr) {
+    res.status(500).send({ error: 'Something failed!' })
+  } else {
+    next(err)
+  }
+}
+
+function errorHandler (err, req, res, next) {
+  res.status(500)
+  res.render('error', { error: err })
+}

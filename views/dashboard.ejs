@@ -15,15 +15,11 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="/css/style.css">
     <!-- Load all javascripts (overriden by the later ones) -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
-    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.1.min.js"></script>
     <script type="text/javascript" src="/js/dash.js"></script>
-    <script type="text/javascript">
-      // refresh the data every 5 seconds
-      setInterval(reloadData, 5000);
-    </script>
   </head>
   <body>
     <div class="container">
@@ -52,7 +48,7 @@
             <% for (var i = 0; i < Object.keys(columnAttrMap).length; i++){ %>
               <th id="th-<%=Object.keys(columnAttrMap)[i].toLowerCase().split(' ').join('_')%>"><%= Object.keys(columnAttrMap)[i] %></th>
             <% } %>
-            <th><button id="button-toggle_targets" type="button" class="btn btn-primary" data-toggle="collapse" data-target="#tabs_board">Toggle Targets</button></th>
+            <th><!-- <button id="button-edit_targets" type="button" class="btn btn-primary" data-toggle="collapse" data-target="#tabs_board">Edit Targets</button> --></th>
           </tr>
         </thead>
         <tbody>
@@ -64,7 +60,7 @@
                     <td id="td-<%=rows[i].id%>-<%= Object.keys(columnAttrMap)[j].toLowerCase().split(' ').join('_') %>">
                     <% for(var k = 0; k < attrs.length; k++){ 
                       if(attrs[k] in rows[i]){ %>
-                      <%=attrNameMap[attrs[k]]%>: <text id="text-<%=rows[i].id%>-<%=attrs[k]%>" class="metric_value"><%= rows[i][attrs[k]] %></text><br />
+                      <%=attrNameMap[attrs[k]]%>:&nbsp;<text id="text-<%=rows[i].id%>-<%=attrs[k]%>" class="metric_value"><%= rows[i][attrs[k]] %></text><br />
                     <% }
                     } %>
                     </td>
@@ -74,32 +70,29 @@
               <% } %>
               <td>
                 <!-- <button type="button" id="button-edit_target" class="btn btn-outline-primary">Edit</button> -->
-                <button type="button" id="button-more_cmd" class="btn btn-outline-primary" data-toggle="collapse" data-target="#tabs_board">Manual Tests ></button>
+                <button type="button" id="btn-<%=rows[i].id%>-cmd" class="btn btn-outline-primary btn_manual_cmd">Manual Tests ></button>
               </td>
             </tr>
           <% } %>
         </tbody>
       </table>
-      <div id="tabs_board" class="collapse container">
+      <div id="tabs_board" class="container">
+        <!-- Tab links -->
         <ul class="nav nav-tabs" id="tabs_hub" role="tablist">
           <li class="nav-item">
             <a class="nav-link active" id="targetsjson-tab" data-toggle="tab" href="#targetsjson" role="tab" aria-controls="targetsjson" aria-selected="true">
               targets.json<!-- <button type="button" class="close" style="margin-left:10px">&times;</button> -->
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="false">
-              Profile<button type="button" class="close" style="margin-left:10px">&times;</button>
-            </a>
-          </li>
         </ul>
+
+        <!-- Tab content -->
         <div class="tab-content" id="tabs_content">
           <div class="tab-pane fade show active" id="targetsjson" role="tabpanel" aria-labelledby="targetsjson-tab">
-            <textarea id="textarea_targetsjson" class="form-control col-xs-12"><%=JSON.stringify(targets, null, 4);%></textarea>
-            <button id="button-save_targets" type="button" class="btn btn-primary">Save</button>
-            <button id="button-reload_targets" type="button" class="btn btn-outline-primary">Reload</button>
+            <textarea id="ta-targetsjson" class="form-control col-xs-12"><%=JSON.stringify(targets, null, 4);%></textarea>
+            <button id="btn-save-targets" type="button" class="btn btn-primary">Save</button>
+            <button id="btn-reload-targets" type="button" class="btn btn-outline-primary">Reload</button>
           </div>
-          <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">...</div>
         </div>
       </div>
     </div>

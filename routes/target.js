@@ -2,21 +2,28 @@
 // ==============================================
 const express = require('express');
 const router  = express.Router();
+const bodyParser = require('body-parser');
 
 // REQUIRED CONTROLLER MODULES
 // ==============================================
-var statusController = require('../controllers/status');
+var targetController = require('../controllers/target');
 
 // ROUTES
 // ==============================================
-// all status route
-router.get('/all', statusController.get_all_status);
+// target list route
+router.get('/all', targetController.get_all_targets);
+
+// update target list route
+router.post('/all', targetController.update_all_targets);
+
+// metrics list route
+router.get('/metrics', targetController.get_all_metrics);
 
 // target status route
-router.get('/:targetId', statusController.get_target_status);
+router.get('/:targetId', targetController.get_target);
 
-// target metric status route
-router.get('/:targetId/:metric', statusController.get_target_metric_value);
+// target status metrics route
+router.get('/:targetId/metrics', targetController.get_target_metrics);
 
 // VALIDATE PARAMETERS
 // ==============================================
