@@ -43,3 +43,12 @@ exports.get_target_metrics = function(req, res) {
   });
   res.send(targetMetrics);
 };
+
+// Display list of all manual commands of a specific target
+exports.get_target_manualcmd = function(req, res) {
+  var targetManualCMD = targetModel.getTargetManualCMD(req.params.targetId, function(err, doc) {
+    if (err) return next(err);
+    res.json(doc);
+  });
+  res.send(targetManualCMD);
+};

@@ -245,10 +245,24 @@ exports.getHttpResponse = function(target){
     }
   }
   // update in allStatus
-  request({url: target.url, time : true}, function(error, response) {
-    if(error) throw error;
+  request({
+    url: target.url,
+    time : true,
+    agentOptions: {
+      rejectUnauthorized: false
+    }
+  }, function(error, response, body) {
     for(var i = 0; i < allStatus.length; i++){
       if(allStatus[i].id == target.id){
+        if(error){
+          if(target.metrics.indexOf("http_statuscode") !== -1){
+            allStatus[i].http_statuscode = "Internal Error";
+          }
+          if(target.metrics.indexOf("response_delay") !== -1){
+            allStatus[i].response_delay = "Internal Error";
+          }
+          break;
+        }
         if(target.metrics.indexOf("http_statuscode") !== -1 && typeof response.statusCode !== "undefined"){
           allStatus[i].http_statuscode = response.statusCode.toString();
         }

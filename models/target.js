@@ -72,3 +72,15 @@ exports.getTargetMetrics = function(targetId){
   return metrics;
   // TODO: handle not found and duplicate id cases
 }
+
+exports.getTargetManualCMD = function(targetId){
+  var manualcmd = [];
+  var target = rawTargets.find(function(t){
+    return t.id == targetId;
+  });
+  if(target && target.hasOwnProperty('manual_cmd')){
+    manualcmd = target.manual_cmd;
+  }
+  return manualcmd;
+  // TODO: handle not found and duplicate id cases
+}

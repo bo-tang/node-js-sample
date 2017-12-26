@@ -15,7 +15,7 @@ $(document).ready(function() {
       url: "/target/all",
       dataType: "json",
       success: function(targets){
-        console.log(targets)
+        // console.log(targets)
         $("#ta-targetsjson").val(JSON.stringify(targets, null, 4))
       }
     })
@@ -28,7 +28,7 @@ $(document).ready(function() {
       data: {"targets":JSON.parse($("#ta-targetsjson").val())},
       dataType: "json",
       success: function(targets){
-        console.log(targets)
+        // console.log(targets)
         $("#ta-targetsjson").val(JSON.stringify(targets, null, 4))
       }
     })
@@ -36,45 +36,61 @@ $(document).ready(function() {
 
   $(".btn_manual_cmd").on("click", function(){
     var id = $(this).prop("id").split("-")[1];
+    var name = $(this).prop("name");
     $.ajax({
       type: "GET",
-      url: "/target/" + id,
+      url: "/target/" + id + "/manualcmd",
       dataType: "json",
-      success: function(target){
+      success: function(manualcmd){
         // console.log(target)
         // activate tab if exist, otherwise create a new one
         if($('#tab-' + id).index() === -1){
           // create a new tab and its pane at the end of the tab list
           $('#tabs_hub').append('<li class="nav-item"><button type="button" class="close">&times;</button>'
             + '<a class="nav-link" id="tab-' + id + '" data-toggle="tab" href="#tabpane-' + id + '" role="tab" '
-            + 'aria-controls="tabpane-' + id + '" aria-selected="false">' + target.name + '</a></li>');
+            + 'aria-controls="tabpane-' + id + '" aria-selected="false">' + name + '</a></li>');
           $('#tabs_content').append(
             '<div class="tab-pane" id="tabpane-' + id + '" role="tabpanel" aria-labelledby="tab-' + id + '">'
-            + '<textarea id="ta-targetsjson" class="form-control col-xs-12"></textarea>'
-            + '<button id="btn-execute-manualcmd" type="button" class="btn btn-primary">Save &amp; Execute</button>'
-            + '<button id="btn-reload-manualcmd" type="button" class="btn btn-outline-primary">Reload</button></div>');
+            + '<textarea id="ta-manualcmd-' + id + '" class="form-control col-xs-12">' + JSON.stringify(manualcmd, null, 4)
+            + '</textarea><button id="btn-execute-manualcmd-' + id + '" type="button" class="btn btn-primary">Save &amp; Execute</button>'
+            + '<button id="btn-reload-manualcmd-' + id + '" type="button" class="btn btn-outline-primary">Reload</button></div>');
         }
         $('#tab-' + id).tab('show');
+
+        // add button event listeners
+        $('#btn-reload-manualcmd-' + id).on("click", function(){
+          $.ajax({
+            type: "GET",
+            url: "/target/" + id + "/manualcmd",
+            dataType: "json",
+            success: function(manualcmd){
+              console.log(manualcmd)
+              $("#ta-manualcmd-" + id).val(JSON.stringify(manualcmd, null, 4))
+            }
+          })
+        })
       }
     })
   })
+
+
 
   $("#tabs_hub").on("click", ".close", function(){
     // remove the tab and its associated tabpanel
     var tabpane_id = $(this).parent("li").find("a").attr('href');
     var tab_index = $(this).parent("li").index();
     var tab_length = $('#tabs_hub li').length;
-    console.log(tabpane_id + " " + tab_index + " " + tab_length)
+    // console.log(tabpane_id + " " + tab_index + " " + tab_length)
     if(tab_index == (tab_length - 1)){
       // show prev tab
       var showtab = $(this).parent("li").prev().find("a");
-      console.log(showtab.attr("id"));
+      // console.log(showtab.attr("id"));
       showtab.tab("show");
       // $(showtab.attr('href')).addClass("active");
     } else {
       // show next tab
       var showtab = $(this).parent("li").next().find("a");
-      console.log(showtab.text());
+      // console.log(showtab.text());
       showtab.tab("show");
       // $(showtab.attr('href')).addClass("active");
     }
