@@ -1,4 +1,4 @@
-.tab-pane {
+.tab-pane{
   padding: 15px;
 }
 
@@ -38,7 +38,7 @@
   display: inline-block;
   float: right;
   position:relative;
-  z-index: 9999;
+  /*z-index: 9999;*/
 }
 .close:hover {
   display:inline;
@@ -50,5 +50,18 @@
 }
 
 .nav-tabs > li .close {
-  margin: 2px;
+  margin-right: .5rem;
+  margin-top: .3em;
+}
+
+.nav-link {
+  padding-right: 2rem;
+}
+
+.modal-body textarea {
+  min-height: 350px;
+}
+
+.modal-body{
+  padding: 1em 1.5em;
 }

@@ -52,3 +52,12 @@ exports.get_target_manualcmd = function(req, res) {
   });
   res.send(targetManualCMD);
 };
+
+// Update all manual commands of a specific target
+exports.update_target_manualcmd = function(req, res) {
+  var targetManualCMD = targetModel.updateTargetManualCMD(req.params.targetId, req.body.manual_cmd, function(err, doc) {
+    if (err) return next(err);
+    res.json(doc);
+  });
+  res.send(targetManualCMD);
+};

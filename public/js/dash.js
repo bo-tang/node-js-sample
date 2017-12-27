@@ -52,12 +52,39 @@ $(document).ready(function() {
           $('#tabs_content').append(
             '<div class="tab-pane" id="tabpane-' + id + '" role="tabpanel" aria-labelledby="tab-' + id + '">'
             + '<textarea id="ta-manualcmd-' + id + '" class="form-control col-xs-12">' + JSON.stringify(manualcmd, null, 4)
-            + '</textarea><button id="btn-execute-manualcmd-' + id + '" type="button" class="btn btn-primary">Save &amp; Execute</button>'
+            + '</textarea><button id="btn-execute-manualcmd-' + id + '" name = "' + name + '" type="button" class="btn btn-primary" data-toggle="modal"'
+            + 'data-target="#modal-manualcmd-results">Save &amp; Execute</button>'
             + '<button id="btn-reload-manualcmd-' + id + '" type="button" class="btn btn-outline-primary">Reload</button></div>');
         }
         $('#tab-' + id).tab('show');
 
-        // add button event listeners
+        // button #btn-execute-manualcmd-* event listener
+        $('#btn-execute-manualcmd-' + id).on("click", function(){
+          // save manual_cmd to target
+          $.ajax({
+            type: "POST",
+            url: "/target/" + id + "/manualcmd",
+            data: {"manual_cmd":JSON.parse($("#ta-manualcmd-" + id).val())},
+            dataType: "json",
+            success: function(results){
+              console.log(results)
+              // $("#ta-manualcmd-" + id).val(JSON.stringify(manualcmd, null, 4))
+            }
+          });
+
+          // execute target manual_cmd
+          $.ajax({
+            type: "PUT",
+            url: "/status/" + id + "/manualcmd",
+            dataType: "json",
+            success: function(results){
+              console.log(results)
+              // $("#ta-manualcmd-" + id).val(JSON.stringify(manualcmd, null, 4))
+            }
+          })
+        })
+
+        // button #btn-reload-manualcmd-* event listener
         $('#btn-reload-manualcmd-' + id).on("click", function(){
           $.ajax({
             type: "GET",
@@ -72,8 +99,40 @@ $(document).ready(function() {
       }
     })
   })
+  var switchGetResults = null;
+  $('#modal-manualcmd-results').on('show.bs.modal', function (e) {
+    // change modal title
+    $("#txt-target-hostname").text(e.relatedTarget.name);
+    var id = e.relatedTarget.id.split("-")[3];
+    // get current results every
+    if(switchGetResults == null){
+      switchGetResults = setInterval(function(){
+        $.ajax({
+          type: "GET",
+          url: "/status/" + id + "/manualcmd_results",
+          dataType: "text",
+          success: function(result){
+            console.log(result)
+            if(result.indexOf("logout\r\n") !== -1 && switchGetResults !== null){
+              clearInterval(switchGetResults);
+            }
+            $("#ta-manualcmd-results").html(result);
+          },
+          error: function(res) {
+            console.log(result)
+          }
+        })
+      }, 1000);
+    }
+  })
 
-
+  $('#modal-manualcmd-results').on('hide.bs.modal', function (e) {
+    // switch off the manualcmd results retrieval requests
+    if(switchGetResults !== null){
+      clearInterval(switchGetResults);
+    }
+    switchGetResults = null;
+  })
 
   $("#tabs_hub").on("click", ".close", function(){
     // remove the tab and its associated tabpanel

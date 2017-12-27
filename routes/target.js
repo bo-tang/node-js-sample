@@ -28,6 +28,9 @@ router.get('/:targetId/metrics', targetController.get_target_metrics);
 // target manual commands route
 router.get('/:targetId/manualcmd', targetController.get_target_manualcmd);
 
+// update target manual commands route
+router.post('/:targetId/manualcmd', targetController.update_target_manualcmd);
+
 // VALIDATE PARAMETERS
 // ==============================================
 // //route middleware to validate :targetId

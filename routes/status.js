@@ -15,8 +15,14 @@ router.get('/all', statusController.get_all_status);
 // target status route
 router.get('/:targetId', statusController.get_target_status);
 
+// target manualcmd results route
+router.get('/:targetId/manualcmd_results', statusController.get_target_manualcmd_results);
+
 // target metric status route
 router.get('/:targetId/:metric', statusController.get_target_metric_value);
+
+// target manualcmd route
+router.put('/:targetId/manualcmd', statusController.exec_target_manualcmd);
 
 // VALIDATE PARAMETERS
 // ==============================================

@@ -29,3 +29,23 @@ exports.get_target_metric_value = function(req, res) {
   });
   res.send(targetMetricValue);
 };
+
+// Execute manual commands of a specific target
+exports.exec_target_manualcmd = function(req, res) {
+  var execResults = statusModel.execManualCMD(req.params.targetId, function(err, doc) {
+    if (err) return next(err);
+    res.json(doc);
+  });
+  res.send(execResults);
+};
+
+// Get manual command results of a specific target
+exports.get_target_manualcmd_results = function(req, res) {
+  var execResults = statusModel.getManualCMDResults(req.params.targetId, function(err, doc) {
+    console.log("Error: ", err)
+    if (err) return next(err);
+    res.json(doc);
+  });
+  // console.log(execResults)
+  res.send(execResults);
+};

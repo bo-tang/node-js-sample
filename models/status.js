@@ -7,7 +7,7 @@ const os = require('os');
 
 // GLOBAL VARIABLES
 // ================================================
-const rawTargets = require("../assets/targets.json");
+var rawTargets = require("../assets/targets.json");
 // IMPORTANT: STATIC VARIABLE FOR ALL THE STATUS UPDATES
 var allStatus = [];
 // initialize allStatus
@@ -422,4 +422,90 @@ exports.getMysqlLoad = function(target){
     privateKey: fs.readFileSync(target.ssh_cred)
   });
   return res;
+}
+
+var execResults = {};
+// initialize execResults
+for(i = 0; i < rawTargets.length; i++){
+  execResults[rawTargets[i].id] = "";
+}
+
+// var rawExecResults = require("/tmp/execResults.json");
+
+exports.getManualCMDResults = function(targetId){
+  return execResults[targetId];
+}
+
+exports.execManualCMD = function(targetId){
+  // reset previous result
+  execResults[targetId] = "";
+  // find target object
+  var target = rawTargets.find(function(t){
+    return t.id == targetId;
+  });
+  if(!target){
+    console.log("Error: no target found by " + targetId);
+    return "";
+  }
+  var commands = JSON.parse(JSON.stringify(target.manual_cmd));
+  var command = "";
+  var pwSent = false;
+  var sudosu = false;
+  var conn = new sshClient();
+  conn.on('ready', function() {
+    console.log('Connection :: ready');
+    conn.shell( function(err, stream) {
+      if(err) throw err;
+      stream.on('close', function() {
+        console.log('Stream :: close');
+        conn.end();
+      }).on('data', function(data) {
+        //handle sudo password prompt
+        if (command.indexOf("sudo") !== -1 && !pwSent) {
+           //if sudo su has been sent a data event is triggered but the first event is not the password prompt
+           //this will ignore the first event and only respond when the prompt is asking for the password
+           if (command.indexOf("sudo su") > -1) {
+              sudosu = true;
+           }
+           if (data.indexOf(":") >= data.length - 2) {
+              pwSent = true;
+              stream.write (password + '\n');
+           }
+        } else {
+          //detect the right condition to send the next command
+          var dataLength = data.length
+          if (dataLength > 2 && (data.indexOf("$") >= dataLength - 2 || data.indexOf("#") >= dataLength - 2 )) {
+            if (commands.length > 0) {
+              command = commands.shift();
+              stream.write (command + '\n');
+            } else {
+              //sudo su requires two exit commands to close the session
+              if (sudosu) {
+                 sudosu = false;
+                 stream.write ('exit\n');
+              } else {
+                 stream.end ('exit\n');
+              }
+            }
+          } else {
+            console.log(data);
+            execResults[targetId] += data.toString();
+          }
+        }
+      }).stderr.on('data', function(data) {
+          console.log('STDERR: ' + data);
+        });
+
+      //first command
+      command = commands.shift();
+      //console.log "first command: " + command;
+      stream.write( command + '\n' );
+    });
+  }).connect({
+    host: target.host,
+    port: 22,
+    username: target.ssh_username,
+    privateKey: fs.readFileSync(target.ssh_cred)
+  });
+  return execResults[targetId];
 }

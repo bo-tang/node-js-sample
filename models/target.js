@@ -84,3 +84,14 @@ exports.getTargetManualCMD = function(targetId){
   return manualcmd;
   // TODO: handle not found and duplicate id cases
 }
+
+exports.updateTargetManualCMD = function(targetId, manual_cmd){
+  var target = rawTargets.find(function(t){
+    return t.id == targetId;
+  });
+  if(target){
+    target["manual_cmd"] = manual_cmd;
+  }
+  return target.manual_cmd;
+  // TODO: handle not found and duplicate id cases
+}
